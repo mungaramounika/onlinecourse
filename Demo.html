@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Bootstrap Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="Demo.css">
+  <link rel="stylesheet" type="text/html/css/JavaScript" href="Demo.js">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=font1|font2|etc" type="text/css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="Demo/myscripts.js" ></script>
+  <script src="..Demo/myscripts.js"></script>
+  <script src="https://kit.fontawesome.com/..Demo/2c7fc28a2f.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <!-- Bootstrap CSS -->
+<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css'>
+<!-- Font Awesome CSS -->
+<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css'>
+<!-- jQuery -->
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+<!-- Bootstrap JS -->
+<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js'></script>
+  <script>
+window.onload = function(){
+  var loading = document.getElementById("loading");
+  loading.classList.add("loading-done");
+  
+  var property = {
+    element: "#images",
+    parallax: .6,
+    interval: 2200,
+    animDuration: 1300,
+    easing: easingInOutQuad
+  }
+
+  var slider = new DXslider(property);
+  slider.init();
+}
+
+class DXslider{
+  constructor(property){
+    this.images = document.querySelector(property.element);
+    this.preButton = document.querySelector(property.element + " nav .pre");
+    this.nextButton = document.querySelector(property.element + " nav .next");
+    this.lightenImages = document.querySelectorAll(".lighten img");
+    this.normalImages = document.querySelectorAll(".normal img");
+    this.canvasBox = document.createElement("div");
+    this.paraEffect = property.parallax; //have to clamp 0 ~ 1
+    this.canvasArray = [];
+    this.progress = 0;
+    this.animating = false;
+    this.interval = property.interval;
+    this.left = true;
+    this.duration = property.animDuration;
+    this.easing = property.easing;
+    
+    this.images.appendChild(this.canvasBox);
+    this.canvasBox.classList.add("canvas");
+  }
+  
+  init(){
+    this.settingStyle();
+    this.settingCanvas();
+    
+    this.preButton.addEventListener("click", function(e){
+      if(!this.animating){  
+        this.left = false;
+        clearTimeout(this.timer);
+        this.slide();
+      }
+    }.bind(this), false);
+    
+    this.preButton.addEventListener("touchend", function(e){
+      if(!this.animating){  
+        this.left = false;
+        clearTimeout(this.timer);
+        this.slide();
+      }
+    }.bind(this), false);
+
+    this.nextButton.addEventListener("click", function(e){
+      if(!this.animating){ 
+        this.left = true;
+        clearTimeout(this.timer);
+        this.slide();
+      }
+    }.bind(this), false);
+    
+    this.nextButton.addEventListener("touchend", function(e){
+      if(!this.animating){ 
+        this.left = true;
+        clearTimeout(this.timer);
+        this.slide();
+      }
+    }.bind(this), false);
+  }
+  
+  settingStyle(){
+    this.imagesWidth = this.images.offsetWidth;
+    this.width = this.lightenImages[0].width;
+    this.height = this.lightenImages[0].height;
+    this.dpi = this.width / this.imagesWidth;
+    
+    this.images.style.height = this.canvasBox.style.height = this.imagesWidth * this.height / this.width + "px";
+    
+    this.preButton.classList.add("after-loading");
+    this.nextButton.classList.add("after-loading");
+  }
+  
+  settingCanvas(){
+    var canvas, context, normal, lighten, n;
+    for(var i = 0, len = this.normalImages.length * 2; i < len; i++){
+      canvas = document.createElement("canvas");
+      this.canvasBox.appendChild(canvas);
+      context = canvas.getContext("2d");
+    
+      canvas.width = this.width;
+      canvas.height = this.height;
+      canvas.style.width = this.imagesWidth + "px";
+      canvas.style.height = this.imagesWidth * this.height / this.width + "px";
+    
+      //add images(lighten and normal) into canvasArray
+      n = i % (len / 2);
+      normal = this.normalImages[n];
+      lighten = this.lightenImages[n];
+      this.canvasArray.push({
+        canvas: canvas, context: context, normal: normal, lighten: lighten
+      });
+    }
+    
+    this.render(this.progress, -this.imagesWidth);
+    this.timer = setTimeout(this.slide.bind(this), this.interval);
+  }
+  
+  slide(){
+    this.left ? 
+    this.tween(-this.imagesWidth, this.duration, this.easing) :
+    this.tween(this.imagesWidth, this.duration, this.easing);
+  }
+  
+  tween(change, duration, easingFunc){
+    var startTime = new Date();
+    this.progress = 0;
+    this.animating = true;
+    this.update(startTime, change, duration, easingFunc);
+  }
+  
+  update(startTime, change, duration, easingFunc){
+    var time = new Date() - startTime;
+    if(time < duration){
+      this.progress = easingFunc(time / duration);
+      this.render(this.progress, change);
+      requestAnimationFrame(this.update.bind(this, startTime, change, duration, easingFunc));
+    } else {
+      if(this.left){
+        var firstEle = this.canvasArray[0];
+        this.canvasArray.shift();
+        this.canvasArray.push(firstEle);
+      } else {
+        var lastEle = this.canvasArray[this.canvasArray.length - 1];
+        this.canvasArray.pop();
+        this.canvasArray.unshift(lastEle);
+      }
+      this.progress = 1;
+      this.animating = false;
+      time = duration;
+      this.left = true;
+      this.render(0, -this.imagesWidth);
+      this.timer = setTimeout(this.slide.bind(this), this.interval);
+    }
+  }
+  
+  render(progress, position){
+    for(var i = 0, len = this.canvasArray.length; i < len; i++){
+      var canvas = this.canvasArray[i].canvas;
+      canvas.style.setProperty("-webkit-transform", "translate(" + (progress * position - (len / 2 - i) * this.imagesWidth)  + "px, 0)");
+      canvas.style.transform = "translate(" + (progress * position - (len / 2 - i) * this.imagesWidth)  + "px, 0)";
+      
+      var context = this.canvasArray[i].context;
+      context.clearRect(0, 0, this.width, this.height);
+      context.globalCompositeOperation = "source-over";
+      context.drawImage(this.canvasArray[i].normal, 0, 0, this.width, this.height);
+      context.globalCompositeOperation = "lighten";
+      context.drawImage(this.canvasArray[i].lighten, ((len / 2 - i) * this.imagesWidth - progress * position) * this.dpi * this.paraEffect, 0, this.width, this.height);
+    }
+  }
+}
+
+
+function easingInOutQuad(t){
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; 
+}
+
+  var downArrow = document.getElementById("btn1");
+  var upArrow = document.getElementById("btn2");
+
+  downArrow.onclick = function () {
+    'use strict';
+    document.getElementById("first-list").style = "top:-620px";
+    document.getElementById("second-list").style = "top:-620px";
+    downArrow.style = "display:none";
+    upArrow.style = "display:block";
+};
+
+upArrow.onclick = function () {
+    'use strict';
+    document.getElementById("first-list").style = "top:0";
+    document.getElementById("second-list").style = "top:80px";
+    upArrow.style = "display:none";
+    downArrow.style = "display:block";
+};
+
+
+// creating my image link
+
+var link = document.createElement("a");
+document.body.appendChild(link);
+
+link.href = "https://codepen.io/mo7hamed/pens/public";
+link.target = "_blank";
+
+var photo = document.createElement("img");
+link.appendChild(photo);
+
+photo.src =
+  "mouni.jpg";
+photo.alt = "mo7amed";
+
+photo.style =
+  "border-radius:50%;position:fixed;bottom:20px;right:20px;transition:all 0.5s ease";
+
+photo.onmouseover = function() {
+  this.style.transform = "scale(1.1,1.1)";
+  this.style.boxShadow = "5px 5px 15px #000";
+};
+
+photo.onmouseout = function() {
+  this.style.transform = "scale(1,1)";
+  this.style.boxShadow = "none";
+};
+let mainNav = document.getElementById("js-menu");
+let navBarToggle = document.getElementById("js-navbar-toggle");
+
+navBarToggle.addEventListener("click", function() {
+  mainNav.classList.toggle("active");
+});
+  </script>
+</head>
+<style>
+  
+  
+
+
+
+  .box1 {
+  float: left;
+  width: 50%;
+  padding: 50px;
+  height: 300px;
+}
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+.a{
+ padding:1px;
+ margin-bottom:40px;
+ margin-right:25px;
+}
+
+ * {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  font-family: "Josefin Sans", sans-serif;
+}
+
+   .bg1{
+    margin: 0;
+    padding: 0;
+    background-color:rgb(187, 97, 49);
+    font-family: arial
+}
+
+.box{
+    margin:0 10%;
+    height: 680px;
+    overflow: hidden;
+    padding: 10px 0 40px 60px
+}
+
+.box ul{
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    transition: all 0.5s linear;
+    top:0
+}
+
+.box ul:last-of-type{top:80px}
+
+.box ul:before{
+    content: "";
+    display: block;
+    width: 0;
+    height: 100%;
+    border:1px dashed #fff;
+    position: absolute;
+    top:0;
+    left:30px
+}
+
+.box ul li{
+    margin: 20px 60px 60px;
+    position: relative;
+    padding: 10px 20px;
+    background:rgba(255, 255, 255, 0.3);
+    color:#fff;
+    border-radius: 10px;
+    line-height: 20px;
+    width: 35%
+}
+
+
+.box ul li > span{
+    content: "";
+    display: block;
+    width: 0;
+    height: 100%;
+    border:1px solid #fff;
+    position: absolute;
+    top:0;
+    left:-30px
+}
+
+.box ul li > span:before,.box ul li > span:after{
+    content: "";
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background:#ff6d6d;
+    border:2px solid #fff;
+    position: absolute;
+    left:-7.5px
+}
+
+.box ul li > span:before{top:-10px}
+.box ul li > span:after{top:95%}
+
+.box .title{
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 5px
+}
+
+.box .info:first-letter{text-transform: capitalize;line-height: 1.7}
+
+.box .name{
+    margin-top: 10px;
+    text-transform: capitalize;
+    font-style: italic;
+    text-align: right;
+    margin-right: 20px
+}
+
+
+.box .time span{
+    position: absolute;
+    left: -100px;
+    color:#fff;
+    font-size:80%;
+    font-weight: bold;
+}
+.box .time span:first-child{top:-16px}
+.box .time span:last-child{top:94%}
+
+
+.arrow{
+    position: absolute;
+    top: 105%;
+    left: 22%;
+    cursor: pointer;
+  height:20px;
+  width:20px
+}
+
+.arrow:hover{
+    -webkit-animation: arrow 1s linear infinite;
+       -moz-animation: arrow 1s linear infinite;
+         -o-animation: arrow 1s linear infinite;
+            animation: arrow 1s linear infinite;
+}
+
+.box ul:last-of-type .arrow{
+    position: absolute;
+    top: 105%;
+    left: 22%;
+    transform: rotateX(180deg);
+    cursor: pointer;
+}
+
+svg{
+    width: 20px;
+    height: 20px
+}
+
+@keyframes arrow{
+    0%,100%{
+        top:105%
+    }
+    50%{
+        top:106%
+    }
+}
+
+@-webkit-keyframes arrow{
+    0%,100%{
+        top:105%
+    }
+    50%{
+        top:106%
+    }
+}
+
+@-moz-keyframes arrow{
+    0%,100%{
+        top:105%
+    }
+    50%{
+        top:106%
+    }
+}
+
+@-o-keyframes arrow{
+    0%,100%{
+        top:105%
+    }
+    50%{
+        top:106%
+    }
+}
+
+      /* Importing the fonts */
+      @import url(
+  'https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700&display=swap');
+      * {
+        margin: 0;
+        padding: 0;
+        outline: none;
+        box-sizing: border-box;
+        font-family: 'Montserrat', sans-serif;
+      }
+  
+      /* Body of the page */
+      body {
+        background: #f2f2f2;
+      }
+  
+      /* Styling all the elements in nav as a whole */
+      nav {
+        background: #d67f23;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        height: 70px;
+        padding: 0 100px;
+      }
+  
+      /* Styling the logo */
+      nav .logo {
+        color: #fff;
+        font-size: 30px;
+        font-weight: 600;
+        letter-spacing: -1px;
+      }
+  
+      /* Styling all the nav items as a whole */
+      nav .nav-items {
+        display: flex;
+        flex: 1;
+        padding: 0 0 0 200px;
+      }
+  
+      /* Styling the list items in the nav tag */
+      nav .nav-items li {
+        list-style: none;
+        padding: 0 10px;
+      }
+  
+      /* Styling each list items */
+      nav .nav-items li a {
+        color: #fff;
+        font-size: 15px;
+        font-weight: 500;
+        text-decoration: none;
+      }
+  
+      /* Setting the hover colour on the list items*/
+      
+      nav .nav-items li a:hover {
+        color: #19191b;
+      }
+      
+      nav .searchbar {
+        position: relative;
+      }
+  
+      /* Styling the search box where the
+        input would be given */
+      nav .searchbar input[type="text"] {
+        border: 0;
+        padding: 0;
+        width: 0px;
+        height: 35px;
+        border-radius: 3px;
+        transition: all 0.3s ease;
+      }
+  
+      /* Styling the search bar icon */
+      nav .searchbar .icon {
+        display: flex;
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 35px;
+        height: 100%;
+        background: none;
+        border-radius: 3px;
+        color: #fff;
+        transition: all 0.5s 0.3s ease;
+      }
+      
+      nav .searchbar .icon i {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+      }
+      
+      nav .searchbar .icon.active {
+        background: #062333;
+        transition: all 0.3s ease;
+      }
+      
+      nav .searchbar input[type="text"].active {
+        width: 
+        250px;
+        padding: 0 10px;
+        transition: all 0.5s 0.2s ease;
+      }
+      
+      nav .licon li {
+        list-style: none;
+        display: flex;
+      }
+      
+      nav .licon li a {
+        padding: 0 20px;
+      }
+  
+      /* Changing the colour of the login
+        icon when hovered over*/
+      
+      .fa-user-circle:hover {
+        color: #0e0d0d !important;
+      }
+</style>
+<body>
+
+
+
+
+    <nav>
+      <div class="logo">
+        <img src="https://lh3.googleusercontent.com/PwijO7nXd84aoFeBJPT6LnhJ8Cj2sPBNwWrPpCHF0jcXA5mMiUJ1Xj5vfbUYxk5ZxiP568j9O2A4YQvKdRgvebtvJIXjNLi--UQm3Ep356l3jla3hmt-BVSkwj6kN3yafnP11pwqxA8rjGDCTTKZctiAb1wXhj5ilYWyVCljfyWuuxeK4SMBgGVLW8sQQjipLvH99iq4qMI1D_CKMKzDhWKBxctO0RmnYJojWPOcsrtRkPE7aL-RcG55-xD_oMW6bMGNaf5mYTft-lJtfYX1wSjNZVuHiq3dCeVH4qmMIQSzFP4gtH6ETjXUrTxQS89kQCPC8S5ylbqjCdc57NH9e82cAv4rT5vzYH1NzDxBWEA4EMuXqislVmuFAWsVkJEiPss7Fk1Wh68FJ9kcvhKLj2qF0Q3X6T9FGX-f_nQyYYY6BIU72lF0KndTHrTEcbQisRNW4zx4zgfWtOvPxuMdJGXk3yt5TyP8NMXl_DhciS_ASbRptAJb5qZXaZfhAFulcNZMfzbHe2GGrjZ6UTWh2gSENH4oa5X31JN7aoON31uhp8SgV-kQDd6XnHIQoHa1ANXt2Dqnfx7Nv6D1L32DW7kX6E_WoBiK_E2MwK3AajatSWTDSzi-P3sZTvjJlucHuRwSPkWHyNnRyAtYS8DH-V48jMNOkgy6XgXEm2n_sMD2zUEHmJ75r4LFN00wyYTu9uPQ7owco3czU_gMzswxrpfB-SSNPCXjxb0qqP-LhX4rMd3UT9wnb2BHXRPj1PlBYJCJS0lF2LjsfjeQVZlUBfQ7rFX_4bjupcScO3PBzKx_xHkBEbv0Sy_BJe8LRKJ0gTA2=w312-h257-no?authuser=0" width="100px" height="70px"> 
+      </div>
+  
+      <div class="nav-items">
+        <li><a href="#">HOME</a></li>
+ 
+        <!-- The Menu items -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbardrop" data-toggle="dropdown">
+            TUTORIALS
+          </a>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="#">c & Datastructures</a>
+            <a class="dropdown-item" href="#">Java</a>
+            <a class="dropdown-item" href="#">Python</a>
+            <a class="dropdown-item" href="#">Html</a>
+            <a class="dropdown-item" href="#">Css</a>
+
+          </div>
+         </li> 
+        <li><a href="#">ABOUT US</a></li>
+        <li><a href="#OUR">SERVICES</a></li>
+        <li><a href="#popular">COURSES</a></li>
+        <li><a href="#bg1">EVENTS</a></li> 
+        <li><a href="#"></a></li> 
+
+
+        
+  
+
+                       
+    </nav>
+   
+
+      <div class="container1">
+        <br>
+        <div id="myCarousel" class="carousel slide" data-ride="carousel">
+          <!-- Indicators -->
+          <ol class="carousel-indicators">
+            <li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+            <li data-target="#myCarousel" data-slide-to="1"></li>
+            <li data-target="#myCarousel" data-slide-to="2"></li>
+            <li data-target="#myCarousel" data-slide-to="3"></li>
+            <li data-target="#myCarousel" data-slide-to="4"></li>
+
+          </ol>
+      
+          <!-- Wrapper for slides -->
+          <div class="carousel-inner" role="listbox">
+      
+            <div class="item active">
+              <img src="https://thenewsavvy.com/wp-content/uploads/2017/06/online-courses-education-singapore.jpg" alt="Chania" width="400" height="345">
+              <div class="carousel-caption">
+                
+              </div>
+            </div>
+      
+            <div class="item">
+              <img src="https://elearningindustry.com/wp-content/uploads/2019/09/online-courses-what-students-want.jpg" alt="Chania" width="300" height="300">
+              <div class="carousel-caption">
+                
+              </div>
+            </div>
+          
+            <div class="item">
+              <img src="https://cdn.dnaindia.com/sites/default/files/styles/full/public/2018/09/05/726641-online-coursethinkstockphotos.jpg" alt="Flower" width="460" height="345">
+              <div class="carousel-caption">
+               
+              </div>
+            </div>
+      
+            <div class="item">
+              <img src="https://www.finance-ni.gov.uk/sites/default/files/images/dfp/news/stock-image-career-opportunities.jpeg" alt="Flower" width="460" height="345">
+              <div class="carousel-caption">
+                
+              </div>
+            </div>
+            <div class="item">
+              <img src="https://youth-time.eu/wp-content/uploads/2020/04/Young-Student-taking-online-course.jpg" alt="Flower" width="460" height="345">
+              <div class="carousel-caption">
+                
+              </div>
+            </div>
+        
+          </div>
+      
+         
+          <a class="left carousel-control" href="#myCarousel" role="button" data-slide="prev">
+            <span class="glyphicon glyphicon-chevron-left" aria-hidden="true">Prev</span>
+            <span class="sr-only">Previous</span>
+          </a>
+          <a class="right carousel-control" href="#myCarousel" role="button" data-slide="next">
+            <span class="glyphicon glyphicon-chevron-right" aria-hidden="true">Next</span>
+            <span class="sr-only">Next</span>
+          </a>
+        </div>
+      </div>
+  
+      <div class="bg">
+        <hr/>
+      </div>
+      <h4>EVENTS</h4>
+  <div class="bg1">
+    
+        <a name="bg1" id="bg1"></a>
+      <div class="box">
+          
+        <ul id="first-list">
+            <li>
+                <span></span>
+                <div class="title">comment #01</div>
+                <div class="info">the best animation , the best toturials you would ever see .</div>
+                <div class="name">- Karthik-</div>
+                <div class="time">
+                    <span>JUN, 17<sup>th</sup></span>
+                    <span>12:00 AM</span>
+                </div>
+            </li>
+            <li>
+                <span></span>
+                <div class="title">summery #01</div>
+                <div class="info">the best animation , the best toturials you would ever see here only . you can learn how to animate and how to use SVG . even else you can add your own animations .</div>
+                <div class="name">- Manikanta -</div>
+                <div class="time">
+                    <span>JUN, 29<sup>th</sup></span>
+                    <span>11:36 AM</span>
+                </div>
+            </li>
+            <li>
+                <span></span>
+                <div class="title">comment #02</div>
+                <div class="info">the best animation , the best toturials you would ever see . what about canvas ?? do you like it ..</div>
+                <div class="name">-Mounika-</div>
+                <div class="time">
+                    <span>FEB, 2<sup>nd</sup></span>
+                    <span>02:00 PM</span>
+                </div>
+            </li>
+            
+            <div class="arrow" id="btn1">
+        
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" width="512px" height="512px" viewBox="0 0 284.929 284.929" style="enable-background:new 0 0 284.929 284.929;" xml:space="preserve">
+                <g>
+                    <g>
+                        <path d="M135.899,167.877c1.902,1.902,4.093,2.851,6.567,2.851s4.661-0.948,6.562-2.851L282.082,34.829    c1.902-1.903,2.847-4.093,2.847-6.567s-0.951-4.665-2.847-6.567L267.808,7.417c-1.902-1.903-4.093-2.853-6.57-2.853    c-2.471,0-4.661,0.95-6.563,2.853L142.466,119.622L30.262,7.417c-1.903-1.903-4.093-2.853-6.567-2.853    c-2.475,0-4.665,0.95-6.567,2.853L2.856,21.695C0.95,23.597,0,25.784,0,28.262c0,2.478,0.953,4.665,2.856,6.567L135.899,167.877z" fill="#FFFFFF"/>
+                        <path d="M267.808,117.053c-1.902-1.903-4.093-2.853-6.57-2.853c-2.471,0-4.661,0.95-6.563,2.853L142.466,229.257L30.262,117.05    c-1.903-1.903-4.093-2.853-6.567-2.853c-2.475,0-4.665,0.95-6.567,2.853L2.856,131.327C0.95,133.23,0,135.42,0,137.893    c0,2.474,0.953,4.665,2.856,6.57l133.043,133.046c1.902,1.903,4.093,2.854,6.567,2.854s4.661-0.951,6.562-2.854l133.054-133.046    c1.902-1.903,2.847-4.093,2.847-6.565c0-2.474-0.951-4.661-2.847-6.567L267.808,117.053z" fill="#FFFFFF"/>
+                    </g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+            </svg>
+            
+        </div> 
+        </ul>
+            
+           
+        
+        <ul id="second-list">
+            <li>
+                <span></span>
+                <div class="title">comment #03</div>
+                <div class="info">the best animation , the best toturials you would ever see .</div>
+                <div class="name">- mohamed -</div>
+                <div class="time">
+                    <span>MAR, 21<sup>st</sup></span>
+                    <span>03:49 PM</span>
+                </div>
+            </li>
+            <li>
+                <span></span>
+                <div class="title">summery #02</div>
+                <div class="info">the best animation , the best toturials you would ever see here only . you can learn how to animate and how to use SVG . even else you can add your own animations .</div>
+                <div class="name">- mohamed -</div>
+                <div class="time">
+                    <span>MAY, 13<sup>rd</sup></span>
+                    <span>09:23 AM</span>
+                </div>
+            </li>
+            <li>
+                <span></span>
+                <div class="title">comment #04</div>
+                <div class="info">the best animation , the best toturials you would ever see . what about canvas ?? do you like it ..</div>
+                <div class="name">- mohamed -</div>
+                <div class="time">
+                    <span>OCT, 15<sup>th</sup></span>
+                    <span>08:30 PM</span>
+                </div>
+            </li>
+            
+            <div class="arrow" id="btn2">
+        
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" width="512px" height="512px" viewBox="0 0 284.929 284.929" style="enable-background:new 0 0 284.929 284.929;" xml:space="preserve">
+                <g>
+                    <g>
+                        <path d="M135.899,167.877c1.902,1.902,4.093,2.851,6.567,2.851s4.661-0.948,6.562-2.851L282.082,34.829    c1.902-1.903,2.847-4.093,2.847-6.567s-0.951-4.665-2.847-6.567L267.808,7.417c-1.902-1.903-4.093-2.853-6.57-2.853    c-2.471,0-4.661,0.95-6.563,2.853L142.466,119.622L30.262,7.417c-1.903-1.903-4.093-2.853-6.567-2.853    c-2.475,0-4.665,0.95-6.567,2.853L2.856,21.695C0.95,23.597,0,25.784,0,28.262c0,2.478,0.953,4.665,2.856,6.567L135.899,167.877z" fill="#FFFFFF"/>
+                        <path d="M267.808,117.053c-1.902-1.903-4.093-2.853-6.57-2.853c-2.471,0-4.661,0.95-6.563,2.853L142.466,229.257L30.262,117.05    c-1.903-1.903-4.093-2.853-6.567-2.853c-2.475,0-4.665,0.95-6.567,2.853L2.856,131.327C0.95,133.23,0,135.42,0,137.893    c0,2.474,0.953,4.665,2.856,6.57l133.043,133.046c1.902,1.903,4.093,2.854,6.567,2.854s4.661-0.951,6.562-2.854l133.054-133.046    c1.902-1.903,2.847-4.093,2.847-6.565c0-2.474-0.951-4.661-2.847-6.567L267.808,117.053z" fill="#FFFFFF"/>
+                    </g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+                <g>
+                </g>
+            </svg>
+            
+        </div>
+        </ul>
+        
+        <script src="JavaScript/timeline-V2.js"></script>
+    </div>
+
+
+    
+       
+
+    </div>
+      <div class="bg">
+      <hr/>
+    </div>
+      <h1>Popular Courses</h1>
+      <a name="popular" id="popular"></a>
+      <div class="card-group m-2">
+        <div class="card">
+          <img src="https://preview.colorlib.com/theme/course/images/xcourse_1.jpg.pagespeed.ic.tOJA9C5awf.webp" alt="a snow-capped mountain range"/>
+          <div class="card-body">
+            <h2 class="card-title">A complete guide to design</h2>
+            <p class="card-text">This is a photo of snowy-covered mountains. How majestic.</p>
+            <a href="#" class="btn btn-success">Learn more</a>
+          </div>
+        </div>
+        <div class="card">
+          <img src="https://preview.colorlib.com/theme/course/images/xcourse_2.jpg.pagespeed.ic.pwBtrTpVqm.webp" alt="a snowy mountain with clouds behind it"/>
+          <div class="card-body">
+            <h2 class="card-title">Beginners guide to HTML</h2>
+            <p class="card-text">This is a photo of snowy-covered mountains. How majestic.</p>
+            <a href="#" class="btn btn-success">Learn more</a>
+          </div>
+        </div>
+        <div class="card">
+          <img src="https://preview.colorlib.com/theme/course/images/xcourse_3.jpg.pagespeed.ic.0eIPxRb6Xu.webp" alt="a mountain range under a thin layer of clouds"/>
+          <div class="card-body">
+            <h2 class="card-title">Advanced projects</h2>
+            <p class="card-text">This is a photo of snowy-covered mountains. How majestic.</p>
+            <a href="#" class="btn btn-success">Learn more</a>
+          </div>
+        </div>
+       </div>
+      
+      
+       <section class="h-100 bg-dark">
+        <div class="container py-5 h-100">
+          <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col">
+              <div class="card card-registration my-4">
+                <div class="row g-0">
+                  <div class="col-xl-6 d-none d-xl-block">
+                    <img
+                      src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-registration/img4.webp"
+                      alt="Sample photo" 
+                      class="img-fluid"
+                      style="border-top-left-radius: .25rem; border-bottom-left-radius: .25rem;"
+                    />
+                  </div>
+                  <div class="col-xl-6">
+                    <div class="card-body p-md-5 text-black">
+                      <div class="reg">
+                  <h1>Registration Form </h1>
+                  </div>
+                    <table align="center" cellpadding = "10">
+                    <!--------------------- First Name ------------------------------------------>
+                    <tr>
+                    <td>First Name</td>
+                    <td><input type="text" name="FirstName" maxlength="50" placeholder="Mounika" />
+                    (Max 50 Characters Allowed)
+                    </td>
+                    </tr>
+                    <!------------------------ Last Name --------------------------------------->
+                    <tr>
+                    <td>Last Name</td>
+                    <td><input type="text" name="LastName" maxlength="50" placeholder="reddy"/>
+                    (Max 50 Characters Allowed)
+                    </td>
+                    </tr>
+                    <!-------------------------- Email ID ------------------------------------->
+                    <tr>
+                    <td>Email ID</td>
+                    <td><input type="email" name="EmailID" maxlength="100" placeholder="Gmounika@gmail.com"/></td>
+                    </tr>
+                    <!-------------------------- Mobile Number ------------------------------------->
+                    <tr>
+                    <td>Mobile Number</td>
+                    <td>
+                    <input type="text" name="MobileNumber" maxlength="10" placeholder="7842xxxxxx"/>
+                    (10 Digits Allowed)
+                    </td>
+                    </tr>
+                    <!---------------------- Gender ------------------------------------->
+                    <tr>
+                    <td>Gender</td>
+                    <td>
+                    <input type="radio" name="Gender" value="Male" />
+                    Male
+                    <input type="radio" name="Gender" value="Female" />
+                    Female
+                    </td>
+                    </tr>
+                    <!--------------------------Date Of Birth----------------------------------->
+                    <tr>
+                    <td>Date of Birth(DOB)</td>
+                    <td>
+                    <select name="BirthDay" id="Birthday_Day">
+                    <option value="-1">Day:</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                    <option value="19">19</option>
+                    <option value="20">20</option>
+                    <option value="21">21</option>
+                    <option value="22">22</option>
+                    <option value="23">23</option>
+                    <option value="24">24</option>
+                    <option value="25">25</option>
+                    <option value="26">26</option>
+                    <option value="27">27</option>
+                    <option value="28">28</option>
+                    <option value="29">29</option>
+                    <option value="30">30</option>
+                    <option value="31">31</option>
+                    </select>
+                    <select name="BirthdayMonth" id="Birthday_Month">
+                    <option value="-1">Month:</option>
+                    <option value="January">Jan(1)</option>
+                    <option value="February">Feb(2)</option>
+                    <option value="March">Mar(3)</option>
+                    <option value="April">Apr(4)</option>
+                    <option value="May">May(5)</option>
+                    <option value="June">Jun(6)</option>
+                    <option value="July">Jul(7)</option>
+                    <option value="August">Aug(8)</option>
+                    <option value="September">Sep(9)</option>
+                    <option value="October">Oct(10)</option>
+                    <option value="November">Nov(11)</option>
+                    <option value="December">Dec(12)</option>
+                    </select>
+                    <select name="BirthdayYear" id="Birthday_Year">
+                    <option value="-1">Year:</option>
+                    <option value="2019">2019</option>
+                    <option value="2018">2018</option>
+                    <option value="2017">2017</option>
+                    <option value="2016">2016</option>
+                    <option value="2015">2015</option>
+                    <option value="2014">2014</option>
+                    <option value="2013">2013</option>
+                    <option value="2012">2012</option>
+                    <option value="2011">2011</option>
+                    <option value="2010">2010</option>
+                    <option value="2009">2009</option>
+                    <option value="2008">2008</option>
+                    <option value="2007">2007</option>
+                    <option value="2006">2006</option>
+                    <option value="2005">2005</option>
+                    <option value="2004">2004</option>
+                    <option value="2003">2003</option>
+                    <option value="2002">2002</option>
+                    <option value="2001">2001</option>
+                    <option value="2000">2000</option>
+                    <option value="1999">1999</option>
+                    <option value="1998">1998</option>
+                    <option value="1997">1997</option>
+                    <option value="1996">1996</option>
+                    <option value="1995">1995</option>
+                    <option value="1994">1994</option>
+                    <option value="1993">1993</option>
+                    <option value="1992">1992</option>
+                    <option value="1991">1991</option>
+                    <option value="1990">1990</option>
+                    <option value="1989">1989</option>
+                    <option value="1988">1988</option>
+                    <option value="1987">1987</option>
+                    <option value="1986">1986</option>
+                    <option value="1985">1985</option>
+                    <option value="1984">1984</option>
+                    <option value="1983">1983</option>
+                    <option value="1982">1982</option>
+                    <option value="1981">1981</option>
+                    <option value="1980">1980</option>
+                    </select>
+                    </td>
+                    </tr>
+                    <!------------------------- Address ---------------------------------->
+                    <tr>
+                    <td>Address<br /><br /><br /></td>
+                    <td><textarea name="Address" rows="10" cols="50"></textarea></td>
+                    </tr>
+                    <!-------------------------- City ------------------------------------->
+                    <tr>
+                    <td>City</td>
+                    <td><input type="text" name="City" maxlength="50" placeholder="Bangalore"/>
+                    (Max 50 Characters Allowed)
+                    </td>
+                    </tr>
+                    <!----- -------------------- Pin Code-------------------------------------->
+                    <tr>
+                    <td>Pin Code</td>
+                    <td><input type="Number" name="PinCode" maxlength="6" placeholder="560068"/>
+                    (Max 6 Numbers Allowed)
+                    </td>
+                    </tr>
+                    <!---------------------------- State ----------------------------------->
+                    <tr>
+                    <td>State</td>
+                    <td><input type="text" name="State" maxlength="50" placeholder="Karnataka"/>
+                    (Max 50 Characters Allowed)
+                    </td>
+                    </tr>
+                    <!------------------------------ Country --------------------------------->
+                    <tr>
+                    <td>Country</td>
+                    <td><input type="text" name="Country" placeholder="India" /></td>
+                    </tr>
+                  
+                    
+                   
+                    <!---------------------------- Courses ----------------------------------->
+                    <tr>
+                    <td>Courses<br />Applied For</td>
+                    <td>
+                    <input type="radio" name="C &Datastructure" value="C &Datastructure">C & Datastructure
+                   <br>
+                    <input type="radio" name="Java" value="Java">
+                    Java<br>
+                    <input type="radio" name="Python" value="Python">
+                    Python<br>
+                    <input type="radio" name="Html" value="Html">
+                    Html<br>
+                    <input type="radio" name="Css" value="Css">
+                    Css<br>
+                    
+                    </td>
+                    </tr>
+                    <!----------------------- Submit and Reset ------------------------------->
+                    <tr>
+                    <td colspan="2" align="center"> 
+                      <div class="sub">
+                    <input type="submit" value="Submit">
+                    <input type="reset" value="Reset">
+                    </div>
+                    </td>
+                    </tr>
+                    </table>
+                    </form>
+                  
+    </div>
+    </div>
+    </div>
+    </div>   
+  </div>
+    </div>
+  </section>
+
+  <section id="team" class="pb-5">
+    <div class="container text-center">
+      <div class="bg">
+        <hr/>
+      </div>
+        <h5 class="section-title h1">OUR SERVICES</h5>
+        <a name="OUR" id="OUR"></a>
+        <div class="row">
+            <!-- Team member -->
+            <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="image-flip" ontouchstart="this.classList.toggle('hover');">
+                    <div class="mainflip">
+                        <div class="frontside">
+                            <div class="card">
+                                
+                                      <div class="card-body text-center">
+                                       <p><img class=" img-fluid" src="https://www.globaledulink.co.uk/wp-content/uploads/2017/02/shutterstock_567414451.jpg"></p>
+                                    <h4 class="card-title">Online Courses</h4>
+                                    <p class="card-text">Online courses are revolutionizing formal education, and have opened a new genre of outreach on cultural and scientific topics. These courses deliver a series of lessons to a web browser or mobile device, to be conveniently accessed anytime, anyplace. </p>
+                                    <a href="#" class="btn btn-primary btn-sm"><i class=""></i><i class=""></i><i class=""></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="backside">
+                            <div class="card">
+                                <div class="card-body text-center mt-4">
+                                    <h4 class="card-title">Benefits of Online courses</h4>
+                                    <p class="card-text">By taking online classes, you strengthen your self-discipline in other aspects of your life such as physical fitness, mental stability and even build better relationships. 8. Optimises focus We know it’s never easy to focus in traditional classes for a long period of time.</p>
+                                     
+                                    <ul class="list-inline">
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                              <i class=""></i>
+                                                <i class="fa fa-facebook"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-twitter"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+            
+                                          <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-skype"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-google"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ./Team member -->
+            <!-- Team member -->
+            <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="image-flip" ontouchstart="this.classList.toggle('hover');">
+                    <div class="mainflip">
+                        <div class="frontside">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <p><img class=" img-fluid" src="https://d1m75rqqgidzqn.cloudfront.net/wp-data/2020/07/13022153/BLOG-Images_7-7-2020-06.png" alt="card image"></p>
+                                    <h4 class="card-title">Top programs</h4>
+                                    <p class="card-text">After completing this course you will be confident enough to take up any challenging problem in coding using Data Structures and C</p>
+                                    <a href="#" class="btn btn-primary btn-sm"><i class=""></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="backside">
+                            <div class="card">
+                                <div class="card-body text-center mt-4">
+                                    <h4 class="card-title">Uses of C and Datastructures</h4>
+                                    <p class="card-text"> Using data structures helps you in applying certain operations on your data effectively. We all know how beneficial it is to keep things organized. Having a designated location for everything helps you find that thing later, enabling you to save time and energy. A data structure helps your program similarly.</p>
+                                    <ul class="list-inline">
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-facebook"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-twitter"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-skype"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-google"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ./Team member -->
+            <!-- Team member -->
+            <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="image-flip" ontouchstart="this.classList.toggle('hover');">
+                    <div class="mainflip">
+                        <div class="frontside">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <p><img class=" img-fluid" src="https://tse3.mm.bing.net/th?id=OIP.XwS8MgGC6mpLuN2Py5By5gHaDf&pid=Api&P=0&w=370&h=174"></p>
+                                    <h4 class="card-title">Frontend Technologies</h4>
+                                    <p class="card-text">HTML provides the structure of the page, CSS the (visual and aural) layout, for a variety of devices. Along with graphics and scripting, HTML and CSS are the basis of building Web pages and Web Applications. Learn more below about: What is HTML? HTML is the language for describing the structure of Web pages.
+                                    </p>
+                                    <a href="#" class="btn btn-primary btn-sm"><i class=""></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="backside">
+                            <div class="card">
+                                <div class="card-body text-center mt-4">
+                                    <h4 class="card-title">Html and Css</h4>
+                                    <p class="card-text">You can define a style for each HTML element and apply it to as many Web pages as you want. Easy maintenance − To make a global change, simply change the style, and all elements in all the web pages will be updated automatically. Global web standards − Now HTML attributes are being deprecated and it is being recommended to use CSS.</p>
+                                    <ul class="list-inline">
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-facebook"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-twitter"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-skype"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-google"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ./Team member -->
+            <!-- Team member -->
+            <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="image-flip" ontouchstart="this.classList.toggle('hover');">
+                    <div class="mainflip">
+                        <div class="frontside">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <p><img class=" img-fluid" src="http://lh3.googleusercontent.com/-19-pEa2WYkA/Tu4MlsmBD2I/AAAAAAAAA1E/3V9LJoQgTSA/w1200-h630-p-k-no-nu/javalogo.jpg" alt="card image"></p>
+                                    <h4 class="card-title">Java </h4>
+                                    <p class="card-text">Not to be confused with Javanese language. Not to be confused with JavaScript. Java is a high-level, class-based, object-oriented programming language that is designed to have as few implementation dependencies as possible.</p>
+                                    <a href="#" class="btn btn-primary btn-sm"><i class=""></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="backside">
+                            <div class="card">
+                                <div class="card-body text-center mt-4">
+                                    <h4 class="card-title">Uses of Java</h4>
+                                    <p class="card-text">Java provides you with features that can help you build applications meaning that it can be used in the SaaS, IaaS and PaaS development. It can serve the companies to build their applications remotely or help companies share data with others, whatever the requirement. Thus we have come to an end of this article on ‘Applications of Java’.</p>
+                                    <ul class="list-inline">
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-facebook"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-twitter"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-skype"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-google"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ./Team member -->
+            <!-- Team member -->
+            <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="image-flip" ontouchstart="this.classList.toggle('hover');">
+                    <div class="mainflip">
+                        <div class="frontside">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <p><img class=" img-fluid" src="https://i.ytimg.com/vi/OIwPEHqq_bM/maxresdefault.jpg" alt="card image"></p>
+                                    <h4 class="card-title">Python</h4>
+                                    <p class="card-text">Python is an interpreted, high-level and general-purpose programming language. Python's design philosophy emphasizes code readability with its notable use of significant whitespace . Its language constructs and object-oriented approach aim to help programmers write clear, logical code for small and large-scale projects</p>
+                                    <a href="#" class="btn btn-primary btn-sm"><i class=""></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="backside">
+                            <div class="card">
+                                <div class="card-body text-center mt-4">
+                                    <h4 class="card-title">Uses of Python</h4>
+                                    <p class="card-text">Applications. Python can be used to develop different applications like web applications, graphic user interface based applications, software ,Multiple Programming paradigms, Robust Standard Library,Compatible with Major Platforms and Systems, Access of Database. </p>
+                                    <ul class="list-inline">
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-facebook"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-twitter"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-skype"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-google"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ./Team member -->
+            <!-- Team member -->
+            <div class="col-xs-12 col-sm-6 col-md-4">
+                <div class="image-flip" ontouchstart="this.classList.toggle('hover');">
+                    <div class="mainflip">
+                        <div class="frontside">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <p><img class=" img-fluid" src="http://www.magictouchnet.com/wp-content/uploads/2018/07/mock-test-Image.png" alt="card image"></p>
+                                    <h4 class="card-title">Provide Mocktests</h4>
+                                    <p class="card-text">Mock testing is an approach to unit testing that lets you make assertions about how the code under test is interacting with other system modules. In mock testing, the dependencies are replaced with objects that simulate the behaviour of the real ones.</p>
+                                    <a href="#" class="btn btn-primary btn-sm"><i class=""></i></a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="backside">
+                            <div class="card">
+                                <div class="card-body text-center mt-4">
+                                    <h4 class="card-title">Uses of Mocktests</h4>
+                                    <p class="card-text">The mock tests are based on the current syllabus. Hence, aspirants can use the mock test to test their level of preparation. Mock tests help candidates to know their strong and weak areas for improvement. Attempting the mock test helps aspirants to revise all topics efficiently.</p>
+                                    <ul class="list-inline">
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-facebook"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-twitter"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-skype"></i>
+                                            </a>
+                                        </li>
+                                        <li class="list-inline-item">
+                                            <a class="social-icon text-xs-center" target="_blank" href="#">
+                                                <i class="fa fa-google"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ./Team member -->
+
+        </div>
+    </div>
+</section>
+
+<footer>
+  <div class="footer-wrap">
+  <div class="container first_class">
+      <div class="row">
+        <div class="col-md-4 col-sm-6">
+          <h3>BE THE FIRST TO KNOW</h3>
+          <p>Get all the latest information on  Scholarates Services, Events, Jobs
+            and Fairs. Sign up for our newsletter today.</p>
+        </div>
+        <div class="col-md-4 col-sm-6">
+        <form class="newsletter">
+           <input type="text" placeholder="Email Address"> 
+                                                        <button class="newsletter_submit_btn" type="submit"><i class="fa fa-paper-plane"></i></button>  
+        </form>
+        
+        </div>
+        <div class="col-md-4 col-sm-6">
+        <div class="col-md-12">
+          <div class="standard_social_links">
+        <div>
+          <li class="round-btn btn-facebook"><a href="#"><i class="fab fa-facebook-f"></i></a>
+
+          </li>
+          <li class="round-btn btn-linkedin"><a href="#"><i class="fab fa-linkedin-in" aria-hidden="true"></i></a>
+
+          </li>
+          <li class="round-btn btn-twitter"><a href="#"><i class="fab fa-twitter" aria-hidden="true"></i></a>
+
+          </li>
+          <li class="round-btn btn-instagram"><a href="#"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+
+          </li>
+          <li class="round-btn btn-whatsapp"><a href="#"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>
+
+          </li>
+          <li class="round-btn btn-envelop"><a href="#"><i class="fa fa-envelope" aria-hidden="true"></i></a>
+
+          </li>
+        </div>
+      </div>  
+        </div>
+          <div class="clearfix"></div>
+        <div class="col-md-12"><h3 style="text-align: right;">Stay Connected</h3></div>
+        </div>
+      </div>
+  </div>
+    <div class="second_class">
+      <div class="container second_class_bdr">
+      <div class="row">
+        <div class="col-md-4 col-sm-6">
+
+          <div class="footer-logo"><img src="https://lh3.googleusercontent.com/PwijO7nXd84aoFeBJPT6LnhJ8Cj2sPBNwWrPpCHF0jcXA5mMiUJ1Xj5vfbUYxk5ZxiP568j9O2A4YQvKdRgvebtvJIXjNLi--UQm3Ep356l3jla3hmt-BVSkwj6kN3yafnP11pwqxA8rjGDCTTKZctiAb1wXhj5ilYWyVCljfyWuuxeK4SMBgGVLW8sQQjipLvH99iq4qMI1D_CKMKzDhWKBxctO0RmnYJojWPOcsrtRkPE7aL-RcG55-xD_oMW6bMGNaf5mYTft-lJtfYX1wSjNZVuHiq3dCeVH4qmMIQSzFP4gtH6ETjXUrTxQS89kQCPC8S5ylbqjCdc57NH9e82cAv4rT5vzYH1NzDxBWEA4EMuXqislVmuFAWsVkJEiPss7Fk1Wh68FJ9kcvhKLj2qF0Q3X6T9FGX-f_nQyYYY6BIU72lF0KndTHrTEcbQisRNW4zx4zgfWtOvPxuMdJGXk3yt5TyP8NMXl_DhciS_ASbRptAJb5qZXaZfhAFulcNZMfzbHe2GGrjZ6UTWh2gSENH4oa5X31JN7aoON31uhp8SgV-kQDd6XnHIQoHa1ANXt2Dqnfx7Nv6D1L32DW7kX6E_WoBiK_E2MwK3AajatSWTDSzi-P3sZTvjJlucHuRwSPkWHyNnRyAtYS8DH-V48jMNOkgy6XgXEm2n_sMD2zUEHmJ75r4LFN00wyYTu9uPQ7owco3czU_gMzswxrpfB-SSNPCXjxb0qqP-LhX4rMd3UT9wnb2BHXRPj1PlBYJCJS0lF2LjsfjeQVZlUBfQ7rFX_4bjupcScO3PBzKx_xHkBEbv0Sy_BJe8LRKJ0gTA2=w312-h257-no?authuser=0" alt="logo" width="100" height="70">
+          </div>
+          <p>Your one-stop career platform to find Jobs, Internships, Professional Trainings, Projects, and Volunteering Opportunities.</p>
+        </div>
+        <div class="col-md-2 col-sm-6">
+          <h3>Quick  LInks</h3>
+          <ul class="footer-links">
+            <li><a href="#">Home</a>
+            </li>
+            <li><a href="#">About us</a>
+            </li>
+            <li><a href="#">Scholarates Partners</a>
+            </li>
+            <li><a href="#">Contact Us</a>
+            </li>
+            <li><a href="#" target="_blank">Terms &amp; Conditions</a>
+            </li>
+            <li><a href="#" target="_blank">Privacy Policy</a>
+            </li>
+            <li><a href="#">Sitemap</a>
+            </li>
+          </ul>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <h3>OUR SERVICES</h3>
+          <ul class="footer-category">
+            <li><a href="#">Fresher Jobs</a>
+            </li>
+            <li><a href="#">InternEdge - Internships &amp; Projects </a>
+            </li>
+            <li><a href="#">Resume Edge - Resume Writing Services</a>
+            </li>
+          
+            </li>
+            <li><a href="#">Scholarates - Campus Ambassadors</a>
+            </li>
+          </ul>
+          <div class="clearfix"></div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+          <h3>Scholarates Events</h3>
+          <ul class="footer-links">
+            <li><a href="#">Scholarates Events</a>
+            </li>
+
+            <li><a href="#">Jobs &AMP; Internship Fair 2022</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      
+    </div>
+    </div>
+    
+    <div class="row">
+      
+      <div class="container-fluid">
+      <div class="copyright"> Copyright 2022 | All Rights Reserved by Scholarates Solutions Pvt. Ltd.</div>
+      </div>
+      
+    </div>
+  </div>
+  
+  
+  </footer>
+
+    </body>
